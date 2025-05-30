@@ -1,25 +1,19 @@
-// redisClient.ts
-import { createClient } from 'redis';
+import Redis from "ioredis";
 
-const redisClient = createClient({
-    socket: {
-        host: 'localhost',
-        port: 6380,
-    },
-    database: 0, // Optional: use a specific Redis DB index
+const redis = new Redis({
+  host:"localhost",
+  port: parseInt("6379", 10),
+  password: undefined,
+  db: parseInt("0", 10),
 });
 
-redisClient.on('error', (err) => {
-    console.error('❌ Redis Client Error:', err);
-});
-
-export async function connectRedis() {
+export async function ioRedisDemo() {
     try {
-        await redisClient.connect();
-        console.log('✅ Connected to Redis');
+        await redis.set("key", "value");
+        const value = await redis.get("key");
+
+        console.log("Value from Redis:", value);
     } catch (error) {
-        console.error('❌ Failed to connect to Redis:', error);
+        console.log("Error:", error);
     }
 }
-
-export default redisClient;

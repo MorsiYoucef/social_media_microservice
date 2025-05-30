@@ -6,7 +6,7 @@ import { globalErrorHandler } from './middlewares/errorHandler';
 import { urlVersioning } from './middlewares/apiVersionning';
 import { createBasicRateLimiter } from './middlewares/rateLimiting';
 import itemRoutes from './routes/item-routes';
-import { connectRedis } from './middlewares/redis.config';
+import { ioRedisDemo } from './middlewares/redis.config';
 
 dotenv.config();
 
@@ -28,8 +28,7 @@ app.use(urlVersioning('v1') )
 app.use('/api/v1', itemRoutes);
 
 app.use(globalErrorHandler);
-connectRedis();
-
+ioRedisDemo();
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
