@@ -1,7 +1,15 @@
-import mongoose from "mongoose";
+import mongoose,{ Document, Model } from "mongoose";
 import argon2 from "argon2";
 
-const userSchema = new mongoose.Schema({
+export interface IUser extends Document {
+    username: string;
+    email: string;
+    password: string;
+    createdAt: Date;
+    comparePassword(candidatePassword: string): Promise<boolean>;
+}
+
+const userSchema = new mongoose.Schema<IUser>({
     username: {
         type: String,
         required: true,
@@ -49,5 +57,6 @@ userSchema.methods.comparePassword = async function (candidatePassword: string):
 
 userSchema.index({ username: 'text'});
 
-const User = mongoose.model("User", userSchema);
+const User: Model<IUser> = mongoose.model<IUser>("User", userSchema);
+
 export default User;

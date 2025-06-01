@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
-import RefreshToken from '../models/RefreshToekn';
+import RefreshToken from '../models/RefreshToken';
 dotenv.config();
 
 export const generateTokens = async (user: any) => {
@@ -23,5 +23,5 @@ export const generateTokens = async (user: any) => {
         token: refreshToken,
         expiresAt: expiresAt
     })
-    return {accessToken,refreshToken};
+    return {newAccessToken: accessToken,newRefreshToken: refreshToken};
 }
