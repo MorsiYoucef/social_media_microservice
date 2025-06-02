@@ -1,6 +1,7 @@
 import { Response, Request } from "express";
 import logger from "../utils/logger";
 import Post from "../models/Post";
+import { validateCreatePost } from "../utils/validation";
 
 // Extend Express Request interface to include 'user'
 interface AuthenticatedRequest extends Request {
@@ -11,7 +12,16 @@ interface AuthenticatedRequest extends Request {
 }
 
 export const createPost = async (req: AuthenticatedRequest, res: any) => {
+    logger.info("Create post endpoint hit...", { body: req.body });
     try {
+        const { error } = validateCreatePost(req.body);
+        if (error) {
+            logger.warn("Validation error", error.details[0].message);
+            return res.status(400).json({
+                success: false,
+                message: error.details[0].message
+            });
+        }
         const { content, mediaIds } = req.body;
         if (!content || !mediaIds) {
             return res.status(400).json({
