@@ -8,6 +8,7 @@ import { RedisStore } from 'rate-limit-redis'
 import logger from './utils/logger';
 import proxy from 'express-http-proxy';
 import { errorHandler } from './middlewares/errorHandler';
+import { validateToken } from './middlewares/auth.middleware';
 
 dotenv.config();
 
@@ -59,6 +60,7 @@ const proxyOptions = {
     }
 }
 
+// setting up proxy for out identity service
 app.use("/v1/auth", proxy(process.env.IDENTITY_SERVICE_URL as string, {
     ...proxyOptions,
     proxyReqOptDecorator: (proxyReqOpts: any, srcReq) => { // Function to customize HTTP options for proxied requests
@@ -67,15 +69,33 @@ app.use("/v1/auth", proxy(process.env.IDENTITY_SERVICE_URL as string, {
         return proxyReqOpts;
     },
     userResDecorator: (proxyRes, proxyResData, userReq, userRes) => { // Modifies response from downstream service before sending it to client
-        logger.info(`Response Received from Identity Service: ${proxyRes.statusMessage}`);
+        logger.info(`Response Received from Identity Service: ${proxyRes.statusCode}`);
         return proxyResData
     }
 }));
+
+
+// setting up proxy for out post service
+app.use('/v1/contents', validateToken, proxy(process.env.POST_SERVICE_URL as string, {
+    ...proxyOptions,
+    proxyReqOptDecorator: (proxyReqOpts: any, srcReq: any) => { // Function to customize HTTP options for proxied requests
+        proxyReqOpts.headers['Content-Type'] = 'application/json';
+        proxyReqOpts.headers['x-user-id'] = srcReq.user.userId;
+        return proxyReqOpts;
+    },
+    userResDecorator: (proxyRes, proxyResData, userReq, userRes) => { // Modifies response from downstream service before sending it to client
+        logger.info(`Response Received from Post Service: ${proxyRes.statusCode}`);
+        return proxyResData
+    }
+}
+));
+
 
 app.use(errorHandler)
 
 app.listen(PORT, () => {
     logger.info(`API Gateway is running on port ${PORT}`);
     logger.info(`Identity Service is runnig on port ${process.env.IDENTITY_SERVICE_URL}`);
+    logger.info(`Post Service is running on port ${process.env.POST_SERVICE_URL}`);
     logger.info(`Redis is connected at ${process.env.REDIS_URL}`);
 });
