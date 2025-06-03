@@ -2,6 +2,7 @@ import { Response, Request } from "express";
 import logger from "../utils/logger";
 import Post from "../models/Post";
 import { validateCreatePost } from "../utils/validation";
+import Redis from "ioredis";
 
 // Extend Express Request interface to include 'user'
 interface AuthenticatedRequest extends Request {
@@ -11,7 +12,22 @@ interface AuthenticatedRequest extends Request {
     };
 }
 
-export const createPost = async (req: AuthenticatedRequest, res: any) => {
+type RedisRequest = Request & {
+    RedisClient: Redis
+    user?: object
+}
+
+async function invalidatePostCashe(req: RedisRequest, input: any) {
+    const cashedKey = `posts:${input}`;
+    await req.RedisClient.del(cashedKey);
+
+    const keys = await req.RedisClient.keys("posts:*");
+    if(keys.length > 0 ){
+        await req.RedisClient.del(keys);
+    }
+}
+
+export const createPost = async (req: AuthenticatedRequest & RedisRequest, res: any) => {
     logger.info("Create post endpoint hit...", { body: req.body });
     try {
         const { error } = validateCreatePost(req.body);
@@ -35,6 +51,7 @@ export const createPost = async (req: AuthenticatedRequest, res: any) => {
             mediaIds: mediaIds || []
         });
         await newlyCreatedPost.save();
+        await invalidatePostCashe(req, newlyCreatedPost._id);
         logger.info("Post created successfully", newlyCreatedPost);
         res.status(201).json({
             success: true,
@@ -50,8 +67,31 @@ export const createPost = async (req: AuthenticatedRequest, res: any) => {
     }
 }
 
-const getAllPosts = async (req: Request, res: Response) => {
+export const getAllPosts = async (req: RedisRequest, res: any) => {
     try {
+        const page = parseInt(req.query.page as string) || 1
+        const limit = parseInt(req.query.limit as string) || 10
+        const startIndex = (page-1) * limit;
+
+        const cacheKey = `posts:${page}:${limit}`;
+        const cachedPosts = await req.RedisClient.get(cacheKey)
+
+        if(cachedPosts){
+            logger.info("Post retrieved from cache", { cacheKey });
+            return res.json(JSON.parse(cachedPosts));
+        }
+        const posts = await Post.find({}).sort({createdAt : -1}).skip(startIndex).limit(limit)
+
+        const totalNumPosts = await Post.countDocuments();
+        const result = {
+            posts,
+            currentPage: page,
+            totalPages: Math.ceil(totalNumPosts / limit),
+            totalPosts: totalNumPosts
+        }
+        await req.RedisClient.setex(cacheKey, 300, JSON.stringify(result));
+
+        res.json(result)
 
     } catch (error) {
         logger.error("Error during post retrieval", error);
@@ -62,8 +102,24 @@ const getAllPosts = async (req: Request, res: Response) => {
     }
 }
 
-const getPost = async (req: AuthenticatedRequest, res: Response) => {
+export const getPost = async (req: RedisRequest, res: any) => {
     try {
+        const postId = req.params.id
+        const cashedKey = `post:${postId}`;
+        const cachedPost = await req.RedisClient.get(cashedKey)
+        if(cachedPost){
+            logger.info("Post retrieved from cache", { cashedKey });
+            return res.json(JSON.parse(cachedPost));
+        }
+        const postDetailsById = await Post.findById(postId);
+        if(!postDetailsById){
+            return res.status(404).json({
+                success: false,
+                message: "Post not found"
+            });
+        }
+        await req.RedisClient.setex(cashedKey, 3600, JSON.stringify(postDetailsById));
+        res.json(postDetailsById);
 
 
     } catch (error) {
@@ -75,8 +131,28 @@ const getPost = async (req: AuthenticatedRequest, res: Response) => {
     }
 }
 
-const deletePost = async (req: Request, res: Response) => {
+export const deletePost = async (req: RedisRequest, res: any) => {
     try {
+        const postId = req.params.id
+        if (!req.user || !(req.user as any).userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: User information missing"
+            });
+        }
+        const userId = (req.user as any).userId;
+        const postToDelete = await Post.findOneAndDelete({_id: postId, user: userId});
+        if(!postToDelete){
+            return res.status(404).json({
+                success: false,
+                message: "Post not found"
+            });
+        }
+        await invalidatePostCashe(req, postId);
+        res.json({
+            success: true,
+            message: "Post deleted successfully"
+        });
 
     } catch (error) {
         logger.error("Error during post deletion", error);
