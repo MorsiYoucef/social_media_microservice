@@ -20,14 +20,15 @@ const PostSchema: Schema = new mongoose.Schema(
             type: String,
             required: true
         },
-        mediaIds:
-            { type: String },
+        mediaIds: {
+            type: String
+        },
         likes:
         {
             type: [String],
             default: []
         },
-        createdAt:{
+        createdAt: {
             type: Date,
             default: Date.now()
         }
@@ -35,7 +36,7 @@ const PostSchema: Schema = new mongoose.Schema(
     { timestamps: true }
 );
 
-PostSchema.index({ content: 'text'});
+PostSchema.index({ content: 'text' });
 
 // ?because we will have diffrent service for search
 const Post = mongoose.model<IPost>('Post', PostSchema);

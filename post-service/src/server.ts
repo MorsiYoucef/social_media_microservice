@@ -10,6 +10,7 @@ import {errorHandler} from './middlewares/errorHandler';
 import logger from './utils/logger';
 import {rateLimit} from 'express-rate-limit';
 import { RedisStore } from 'rate-limit-redis'
+import { connectToRabbitMQ } from './utils/rabbitMQ';
 
 
 dotenv.config();
@@ -75,11 +76,25 @@ app.use('/api/contents', ( req:any, res, next) => {
     next();
 }, postRoutes);
 
+async function startServer() {
+    try {
+        await connectToRabbitMQ();
+        app.listen(PORT, () => {
+            logger.info(`RabbitMQ is connected`);
+        });
+    } catch (error) {
+        logger.error('Server start error:', error);
+        process.exit(1);
+    }
+}
+
+startServer();
 
 app.use(errorHandler);
 
+
 app.listen( PORT, () => {
-    logger.info(`Identity service is running on port ${PORT}`);
+    logger.info(`post service is running on port ${PORT}`);
 });
 
 // unhandeled promise rejection
