@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import { RateLimiterRedis } from 'rate-limiter-flexible';
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import Redis from 'ioredis';
@@ -40,7 +40,7 @@ const rateLimiter = new RateLimiterRedis({
     duration: 60, // per minute
 })
 
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
     rateLimiter.consume(req.ip as string)
         .then(() => {
             next();
@@ -54,7 +54,7 @@ app.use((req, res, next) => {
 // ?IP based rate limiting for sensitive endpoints
 const sensitiveRateLimiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 10, // limit each IP to 50 requests per 15 minute
+    max: 100, // limit each IP to 50 requests per 15 minute
     standardHeaders: true, // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
     legacyHeaders: false,
     handler: (req, res) => {
@@ -75,7 +75,7 @@ app.use('/api/media', postRoutes);
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-    logger.info(`Identity service is running on port ${PORT}`);
+    logger.info(`Media service is running on port ${PORT}`);
 });
 
 // unhandeled promise rejection

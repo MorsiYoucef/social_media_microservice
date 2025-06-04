@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import multer from'multer';
 import logger from '../utils/logger';
 import { authenticateRequest } from '../middlewares/auth.middleware';
@@ -11,7 +11,7 @@ const upload = multer({
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 }).single('file');
 
-router.post("/upload", authenticateRequest, (req, res, next) =>{
+router.post("/upload", authenticateRequest, (req: Request, res: any, next: NextFunction) =>{
     upload(req, res, (err) => {
         if (err instanceof multer.MulterError) {
             logger.error("Error during file upload", err);

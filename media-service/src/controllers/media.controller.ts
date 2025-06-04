@@ -1,18 +1,22 @@
 import logger from "../utils/logger";
 import { uploadMediaToCloudinary } from "../utils/cloudinary";
 import Media from "../models/Media";
+import { Request, Response } from "express";
+import cloundinary from "cloudinary";
 
-export const uploadMedia = async (req, res) =>{
-    logger.info("Media upload endpoint hit...", { file: req.file });
+
+
+export const uploadMedia = async (req: Request, res: any) =>{
+    logger.info("Media upload endpoint hit...");
     try {
         if (!req.file) {
             logger.warn("No file uploaded");
             return res.status(400).json({ success: false, message: "No file uploaded" });
         }
-        const  { originalName, mimeType, buffer} = req.file
-        const userId = req.user.userId
+        const  { originalname, mimetype } = req.file
+        const userId = (req as Request & { user: { userId: string } }).user.userId
 
-        logger.info("Uploading media to Cloudinary", { originalName, mimeType });
+        logger.info("Uploading media to Cloudinary", { originalname, mimetype });
 
 
         const media = await uploadMediaToCloudinary(req.file) as { public_id: string; [key: string]: any };
@@ -20,15 +24,15 @@ export const uploadMedia = async (req, res) =>{
 
         const newlyCreateMedia = new Media({
             publicId: media.public_id,
-            originalName,
-            mimeType,
+            originalName: originalname,
+            mimeType: mimetype,
             url: media.secure_url,
             userId
         })
         await newlyCreateMedia.save();
         res.status(200).json({ message: "Media uploaded successfully", newlyCreateMedia });
-    } catch (error) {
-        logger.error("Error uploading media to Cloudinary", { error });
+    } catch (error: any) {
+        logger.error("Error uploading media to Cloudinary", error);
         res.status(500).json({ message: "Error uploading media" });
     }
 }
