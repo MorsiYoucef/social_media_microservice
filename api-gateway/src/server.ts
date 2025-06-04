@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import express, { NextFunction, Request, Response } from 'express';
+import { RequestOptions } from 'http';
 import cors from 'cors';
 import Redis from 'ioredis';
 import helmet from 'helmet';
@@ -60,11 +61,20 @@ const proxyOptions = {
     }
 }
 
+interface AuthenticatedRequest extends Request {
+    user: {
+        userId: string;
+        // add any other custom properties here
+    };
+}
 // setting up proxy for out identity service
 app.use("/v1/auth", proxy(process.env.IDENTITY_SERVICE_URL as string, {
     ...proxyOptions,
-    proxyReqOptDecorator: (proxyReqOpts: any, srcReq) => { // Function to customize HTTP options for proxied requests
-        proxyReqOpts.headers['Content-Type'] = 'application/json';
+    proxyReqOptDecorator: (proxyReqOpts: RequestOptions, srcReq: Request) => { // Function to customize HTTP options for proxied requests
+        if (!proxyReqOpts.headers || Array.isArray(proxyReqOpts.headers)) {
+            proxyReqOpts.headers = {};
+        }
+        (proxyReqOpts.headers as Record<string, string>)['content-type'] = 'application/json';
         // you can change the method;
         return proxyReqOpts;
     },
@@ -78,9 +88,12 @@ app.use("/v1/auth", proxy(process.env.IDENTITY_SERVICE_URL as string, {
 // setting up proxy for out post service
 app.use('/v1/contents', validateToken, proxy(process.env.POST_SERVICE_URL as string, {
     ...proxyOptions,
-    proxyReqOptDecorator: (proxyReqOpts: any, srcReq: any) => { // Function to customize HTTP options for proxied requests
-        proxyReqOpts.headers['Content-Type'] = 'application/json';
-        proxyReqOpts.headers['x-user-id'] = srcReq.user.userId;
+    proxyReqOptDecorator: (proxyReqOpts: RequestOptions, srcReq: Request) => { // Function to customize HTTP options for proxied requests
+        if (!proxyReqOpts.headers || Array.isArray(proxyReqOpts.headers)) {
+            proxyReqOpts.headers = {};
+        }
+        (proxyReqOpts.headers as Record<string, string>)['content-type'] = 'application/json';
+        (proxyReqOpts.headers as Record<string, string>)['x-user-id'] = (srcReq as AuthenticatedRequest).user.userId;
         return proxyReqOpts;
     },
     userResDecorator: (proxyRes, proxyResData, userReq, userRes) => { // Modifies response from downstream service before sending it to client
@@ -91,11 +104,35 @@ app.use('/v1/contents', validateToken, proxy(process.env.POST_SERVICE_URL as str
 ));
 
 
+
+// setting up proxy for out media service
+app.use('/v1/media', validateToken, proxy(process.env.MEDIA_SERVICE_URL as string, {
+    ...proxyOptions,
+    proxyReqOptDecorator: (proxyReqOpts: RequestOptions, srcReq: Request) => { // Function to customize HTTP options for proxied requests
+        if (!proxyReqOpts.headers || Array.isArray(proxyReqOpts.headers)) {
+            proxyReqOpts.headers = {};
+        }
+        (proxyReqOpts.headers as Record<string, string>)['x-user-id'] = (srcReq as AuthenticatedRequest).user.userId;
+        if( !srcReq.headers['content-type']?.startsWith('multipart/form-data')){
+            (proxyReqOpts.headers as Record<string, string>)['content-type'] = 'application/json';
+        }
+        return proxyReqOpts;
+    },
+    userResDecorator: (proxyRes, proxyResData, userReq, userRes) => { // Modifies response from downstream service before sending it to client
+        logger.info(`Response Received from Post Service: ${proxyRes.statusCode}`);
+        return proxyResData
+    },
+    parseReqBody: false
+}
+));
+
+
 app.use(errorHandler)
 
 app.listen(PORT, () => {
     logger.info(`API Gateway is running on port ${PORT}`);
     logger.info(`Identity Service is runnig on port ${process.env.IDENTITY_SERVICE_URL}`);
     logger.info(`Post Service is running on port ${process.env.POST_SERVICE_URL}`);
+    logger.info(`MEDIA Service is running on port ${process.env.MEDIA_SERVICE_URL}`);
     logger.info(`Redis is connected at ${process.env.REDIS_URL}`);
 });
