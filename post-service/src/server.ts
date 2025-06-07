@@ -80,7 +80,7 @@ async function startServer() {
     try {
         await connectToRabbitMQ();
         app.listen(PORT, () => {
-            logger.info(`RabbitMQ is connected`);
+            logger.info(` Post service is running on port ${PORT}`);
         });
     } catch (error) {
         logger.error('Server start error:', error);

@@ -3,6 +3,7 @@ import logger from "../utils/logger";
 import Post from "../models/Post";
 import { validateCreatePost } from "../utils/validation";
 import Redis from "ioredis";
+import { publishEvent } from "../utils/rabbitMQ";
 
 // Extend Express Request interface to include 'user'
 interface AuthenticatedRequest extends Request {
@@ -22,7 +23,7 @@ async function invalidatePostCashe(req: RedisRequest, input: any) {
     await req.RedisClient.del(cashedKey);
 
     const keys = await req.RedisClient.keys("posts:*");
-    if(keys.length > 0 ){
+    if (keys.length > 0) {
         await req.RedisClient.del(keys);
     }
 }
@@ -71,16 +72,16 @@ export const getAllPosts = async (req: RedisRequest, res: any) => {
     try {
         const page = parseInt(req.query.page as string) || 1
         const limit = parseInt(req.query.limit as string) || 10
-        const startIndex = (page-1) * limit;
+        const startIndex = (page - 1) * limit;
 
         const cacheKey = `posts:${page}:${limit}`;
         const cachedPosts = await req.RedisClient.get(cacheKey)
 
-        if(cachedPosts){
+        if (cachedPosts) {
             logger.info("Post retrieved from cache", { cacheKey });
             return res.json(JSON.parse(cachedPosts));
         }
-        const posts = await Post.find({}).sort({createdAt : -1}).skip(startIndex).limit(limit)
+        const posts = await Post.find({}).sort({ createdAt: -1 }).skip(startIndex).limit(limit)
 
         const totalNumPosts = await Post.countDocuments();
         const result = {
@@ -107,12 +108,12 @@ export const getPost = async (req: RedisRequest, res: any) => {
         const postId = req.params.id
         const cashedKey = `post:${postId}`;
         const cachedPost = await req.RedisClient.get(cashedKey)
-        if(cachedPost){
+        if (cachedPost) {
             logger.info("Post retrieved from cache", { cashedKey });
             return res.json(JSON.parse(cachedPost));
         }
         const postDetailsById = await Post.findById(postId);
-        if(!postDetailsById){
+        if (!postDetailsById) {
             return res.status(404).json({
                 success: false,
                 message: "Post not found"
@@ -141,13 +142,22 @@ export const deletePost = async (req: RedisRequest, res: any) => {
             });
         }
         const userId = (req.user as any).userId;
-        const postToDelete = await Post.findOneAndDelete({_id: postId, user: userId});
-        if(!postToDelete){
+        const postToDelete = await Post.findOneAndDelete({ _id: postId, user: userId });
+        if (!postToDelete) {
             return res.status(404).json({
                 success: false,
                 message: "Post not found"
             });
         }
+
+        // publish post delete method
+        await publishEvent('post.deleted',
+            JSON.stringify({
+                postId: (postToDelete._id as string | { toString(): string }).toString(),
+                userId: (req.user as { userId: string }).userId,
+                mediaIds: postToDelete.mediaIds
+            }))
+
         await invalidatePostCashe(req, postId);
         res.json({
             success: true,
