@@ -2,7 +2,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import multer from'multer';
 import logger from '../utils/logger';
 import { authenticateRequest } from '../middlewares/auth.middleware';
-import { uploadMedia } from '../controllers/media.controller';
+import { getAllMedia, uploadMedia } from '../controllers/media.controller';
 
 const router = express.Router();
 
@@ -27,5 +27,7 @@ router.post("/upload", authenticateRequest, (req: Request, res: any, next: NextF
         next()
     });
 }, uploadMedia)
+
+router.get("/all-media", authenticateRequest, getAllMedia)
 
 export default router;

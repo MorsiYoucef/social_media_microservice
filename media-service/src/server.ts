@@ -10,6 +10,8 @@ import { errorHandler } from './middlewares/errorHandler';
 import logger from './utils/logger';
 import { rateLimit } from 'express-rate-limit';
 import { RedisStore } from 'rate-limit-redis'
+import { connectToRabbitMQ, consumeEvent } from './utils/rabbitMQ';
+import { handlePostDeleted } from './events-handlers/media.event';
 
 dotenv.config();
 
@@ -74,10 +76,22 @@ app.use('/api/media', postRoutes);
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-    logger.info(`Media service is running on port ${PORT}`);
-});
+async function startServer() {
+    try {
+        await connectToRabbitMQ();
+        await consumeEvent('post.deleted', handlePostDeleted)
 
+        app.listen(PORT, () => {
+            logger.info(`Media Service is running on port ${PORT}`);
+        })
+    } catch (error) {
+        logger.error('Error starting server:', error);
+        process.exit(1);
+    }
+
+}
+
+startServer();
 // unhandeled promise rejection
 
 process.on('unhandledRejection', (reason, promis) => {
