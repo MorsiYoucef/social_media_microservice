@@ -116,10 +116,38 @@ app.use('/v1/media', validateToken, proxy(process.env.MEDIA_SERVICE_URL as strin
         if( !srcReq.headers['content-type']?.startsWith('multipart/form-data')){
             (proxyReqOpts.headers as Record<string, string>)['content-type'] = 'application/json';
         }
+        (proxyReqOpts.headers as Record<string, string>)["x-user-id"] = (
+          srcReq as AuthenticatedRequest
+        ).user.userId;
         return proxyReqOpts;
     },
     userResDecorator: (proxyRes, proxyResData, userReq, userRes) => { // Modifies response from downstream service before sending it to client
         logger.info(`Response Received from Post Service: ${proxyRes.statusCode}`);
+        return proxyResData
+    },
+    parseReqBody: false
+}
+));
+
+
+// setting up proxy for out search service
+app.use('/v1/search', validateToken, proxy(process.env.SEARCH_SERVICE_URL as string, {
+    ...proxyOptions,
+    proxyReqOptDecorator: (proxyReqOpts: RequestOptions, srcReq: Request) => { // Function to customize HTTP options for proxied requests
+        if (!proxyReqOpts.headers || Array.isArray(proxyReqOpts.headers)) {
+            proxyReqOpts.headers = {};
+        }
+        (proxyReqOpts.headers as Record<string, string>)['x-user-id'] = (srcReq as AuthenticatedRequest).user.userId;
+        if( !srcReq.headers['content-type']?.startsWith('multipart/form-data')){
+            (proxyReqOpts.headers as Record<string, string>)['content-type'] = 'application/json';
+        }
+        (proxyReqOpts.headers as Record<string, string>)["x-user-id"] = (
+          srcReq as AuthenticatedRequest
+        ).user.userId;
+        return proxyReqOpts;
+    },
+    userResDecorator: (proxyRes, proxyResData, userReq, userRes) => { // Modifies response from downstream service before sending it to client
+        logger.info(`Response Received from Search Service: ${proxyRes.statusCode}`);
         return proxyResData
     },
     parseReqBody: false
@@ -133,6 +161,7 @@ app.listen(PORT, () => {
     logger.info(`API Gateway is running on port ${PORT}`);
     logger.info(`Identity Service is runnig on port ${process.env.IDENTITY_SERVICE_URL}`);
     logger.info(`Post Service is running on port ${process.env.POST_SERVICE_URL}`);
-    logger.info(`MEDIA Service is running on port ${process.env.MEDIA_SERVICE_URL}`);
+    logger.info(`media Service is running on port ${process.env.MEDIA_SERVICE_URL}`);
+    logger.info(`search Service is running on port ${process.env.SEARCH_SERVICE_URL}`);
     logger.info(`Redis is connected at ${process.env.REDIS_URL}`);
 });
