@@ -52,6 +52,13 @@ export const createPost = async (req: AuthenticatedRequest & RedisRequest, res: 
             mediaIds: mediaIds || []
         });
         await newlyCreatedPost.save();
+
+        await publishEvent("post.created", JSON.stringify({
+            postId: (newlyCreatedPost._id as string | { toString(): string }).toString(),
+            userId: (newlyCreatedPost.user as string | { toString(): string }).toString(),
+            content: newlyCreatedPost.content,
+            createAt: newlyCreatedPost.createdAt,
+        }));
         await invalidatePostCashe(req, newlyCreatedPost._id);
         logger.info("Post created successfully", newlyCreatedPost);
         res.status(201).json({

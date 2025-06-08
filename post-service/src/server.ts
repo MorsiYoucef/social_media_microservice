@@ -92,11 +92,6 @@ startServer();
 
 app.use(errorHandler);
 
-
-app.listen( PORT, () => {
-    logger.info(`post service is running on port ${PORT}`);
-});
-
 // unhandeled promise rejection
 
 process.on('unhandledRejection', (reason, promis) => {
