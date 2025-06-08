@@ -50,6 +50,8 @@ build/
 # Optional npm cache directory
 .npm/
 
+
+
 # Optional eslint cache
 .eslintcache
 
@@ -73,3 +75,4 @@ Thumbs.db
 
 # VSCode settings
 .vscode/
+.idea/
