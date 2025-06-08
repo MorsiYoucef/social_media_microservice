@@ -26,3 +26,13 @@ export const handlePostCreated = async (event: IEvent) => {
     logger.error("Error handling post creation event");
   }
 };
+
+
+export const handlePostDeleted = async( event: IEvent)=>{
+  try {
+    await Search.findOneAndDelete({ postId: event.postId})
+    logger.info(` Search post deleted: ${event.postId}`)
+  } catch (error) {
+    logger.error("Error handling post deletion event");
+  }
+}

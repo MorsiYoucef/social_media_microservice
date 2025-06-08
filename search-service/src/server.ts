@@ -9,7 +9,7 @@ import { errorHandler } from "./middlewares/errorHandler";
 import logger from "./utils/logger";
 import { connectToRabbitMQ, consumeEvent } from "./utils/rabbitMQ";
 import searchRoute from './routes/search.route'
-import { handlePostCreated } from "./events-handlers/event.handler";
+import { handlePostCreated, handlePostDeleted } from "./events-handlers/event.handler";
 
 dotenv.config();
 
@@ -61,9 +61,10 @@ async function startServer() {
   try {
     await connectToRabbitMQ();
     await consumeEvent("post.created", handlePostCreated);
+    await consumeEvent("post.deleted", handlePostDeleted);
 
     app.listen(PORT, () => {
-      logger.info(`Media Service is running on port ${PORT}`);
+      logger.info(`Search Service is running on port ${PORT}`);
     });
   } catch (error) {
     logger.error("Error starting server:", error);
