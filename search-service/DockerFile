@@ -1,16 +1,20 @@
-# use the official node.js 18 image with alpine linux as the base image
+# Use Node.js 22 with Alpine
+FROM node:22-alpine
 
-FROM node:18-alpine
+# Create and set the working directory (corrected path)
+WORKDIR /usr/src/app
 
-
-WORKDIR /use/src/app
-
+# Copy dependency files first
 COPY package*.json ./
 
-RUN npm ci --only=production 
+# Install all dependencies including devDependencies (needed for ts-node)
+RUN npm install
 
+# Copy the entire project
 COPY . .
 
-EXPOSE 3004
+# Expose the application port
+EXPOSE 3000
 
-CMD [ "node", "src/server.ts" ]
+# Start the app using ts-node
+CMD ["npx", "ts-node", "src/server.ts"]

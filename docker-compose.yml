@@ -2,20 +2,23 @@ version: "3.8"
 
 services:
   api-gateway:
-    build: ./api-gateway
+    build: 
+      context: ./api-gateway
+      dockerfile: DockerFile
     ports:
       - "3000:3000"
     env_file: ./api-gateway/.env
     depends_on:
       - redis
       - rabbitmq
-
     environment:
       - REDIS_URL = redis://redis:6379
       - RABBITMQ_URL = amqp://rabbitmq:5672
 
   identity-service:
-    build: ./identity-service
+    build: 
+      context: ./api-gateway
+      dockerfile: DockerFile
     env_file: ./identity-service/.env
     depends_on: 
       - redis
@@ -24,7 +27,9 @@ services:
       - REDIS_URL = redis://redis:6379
       - RABBITMQ_URL = amqp://rabbitmq:5672
   post-service:
-    build: ./post-service
+    build: 
+      context: ./api-gateway
+      dockerfile: DockerFile
     env_file: ./post-service/.env
     depends_on: 
       - redis
@@ -33,7 +38,9 @@ services:
       - REDIS_URL = redis://redis:6379
       - RABBITMQ_URL = amqp://rabbitmq:5672
   media-service:
-    build: ./media-service
+    build: 
+      context: ./api-gateway
+      dockerfile: DockerFile
     env_file: ./media-service/.env
     depends_on: 
       - redis
@@ -42,7 +49,9 @@ services:
       - REDIS_URL = redis://redis:6379
       - RABBITMQ_URL = amqp://rabbitmq:5672
   search-service:
-    build: ./search-service
+    build: 
+      context: ./api-gateway
+      dockerfile: DockerFile
     env_file: ./search-service/.env
     depends_on: 
       - redis
@@ -58,7 +67,7 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     ports:
-      - "5672:5627"
+      - "5672:5672"
       - "15672:15672"
     healthcheck:
       test: ['CMD', "rabbitmq-diagnostics", "-q", "ping"]
