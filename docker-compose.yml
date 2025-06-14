@@ -20,6 +20,8 @@ services:
       context: ./identity-service
       dockerfile: Dockerfile
     env_file: ./identity-service/.env
+    ports:
+      - "3001:3001"
     depends_on: 
       - redis
       - rabbitmq
@@ -31,6 +33,8 @@ services:
       context: ./post-service
       dockerfile: Dockerfile
     env_file: ./post-service/.env
+    ports:
+      - "3002:3002"
     depends_on: 
       - redis
       - rabbitmq
@@ -42,6 +46,8 @@ services:
       context: ./media-service
       dockerfile: Dockerfile
     env_file: ./media-service/.env
+    ports:
+      - "3003:3003"
     depends_on: 
       - redis
       - rabbitmq
@@ -53,6 +59,8 @@ services:
       context: ./search-service
       dockerfile: Dockerfile
     env_file: ./search-service/.env
+    ports:
+      - "3004:3004"
     depends_on: 
       - redis
       - rabbitmq
