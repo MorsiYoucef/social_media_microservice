@@ -228,21 +228,39 @@ spec:
         ports:
         - containerPort: 5672
         - containerPort: 15672
+        # FIXED READINESS PROBE
         readinessProbe:
           exec:
             command:
             - rabbitmq-diagnostics
-            - -q
-            - ping
-          initialDelaySeconds: 10
-          periodSeconds: 10
+            - status
+          initialDelaySeconds: 120  # Increased from 10
+          periodSeconds: 20
+          timeoutSeconds: 10
+          failureThreshold: 5
+        # ADDED LIVENESS PROBE
+        livenessProbe:
+          exec:
+            command:
+            - rabbitmq-diagnostics
+            - status
+          initialDelaySeconds: 180
+          periodSeconds: 30
+          timeoutSeconds: 10
+        # UPDATED RESOURCE LIMITS
         resources:
           requests:
-            memory: "128Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
+            memory: "512Mi"  # Increased from 128Mi
             cpu: "500m"
+          limits:
+            memory: "1Gi"    # Increased from 512Mi
+            cpu: "1"
+        # ADDED ENVIRONMENT VARIABLES
+        env:
+        - name: RABBITMQ_DEFAULT_USER
+          value: "guest"
+        - name: RABBITMQ_DEFAULT_PASS
+          value: "guest"
 
 ---
 
