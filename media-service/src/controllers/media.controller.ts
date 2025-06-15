@@ -4,14 +4,20 @@ import Media from "../models/Media";
 import { Request, Response } from "express";
 import cloundinary from "cloudinary";
 
+interface FileReq extends Request {
+  originalname?: string;
+  mimetype?: string
+}
 
 
-export const uploadMedia = async (req: Request, res: any) =>{
+
+export const uploadMedia = async (req: FileReq, res: Response) =>{
     logger.info("Media upload endpoint hit...");
     try {
         if (!req.file) {
             logger.warn("No file uploaded");
-            return res.status(400).json({ success: false, message: "No file uploaded" });
+            res.status(400).json({ success: false, message: "No file uploaded" });
+            return;
         }
         const  { originalname, mimetype } = req.file
         const userId = (req as Request & { user: { userId: string } }).user.userId

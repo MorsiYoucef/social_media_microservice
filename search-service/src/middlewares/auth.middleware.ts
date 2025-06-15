@@ -9,13 +9,14 @@ interface AuthenticatedRequest extends Request {
     };
 }
 
-export const authenticateRequest = (req: AuthenticatedRequest, res: any, next: any) => {
+export const authenticateRequest = (req: Request, res: Response, next: NextFunction) => {
     const userIdHeader = req.headers['x-user-id'];
     const userId = Array.isArray(userIdHeader) ? userIdHeader[0] : userIdHeader;
 
     if (!userId) {
         logger.warn("Aceess attempt without user ID");
-        return res.status(401).json({ success: false, message: "User ID not provided" });
+        res.status(401).json({ success: false, message: "User ID not provided" });
+        return;
     }
     req.user = { userId }
     next();
