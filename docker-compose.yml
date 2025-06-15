@@ -36,8 +36,10 @@ services:
     ports:
       - "3002:3002"
     depends_on: 
-      - redis
-      - rabbitmq
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     environment:
       - REDIS_URL = redis://redis:6379
       - RABBITMQ_URL = amqp://rabbitmq:5672
@@ -49,8 +51,10 @@ services:
     ports:
       - "3003:3003"
     depends_on: 
-      - redis
-      - rabbitmq
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     environment:
       - REDIS_URL = redis://redis:6379
       - RABBITMQ_URL = amqp://rabbitmq:5672
@@ -62,8 +66,10 @@ services:
     ports:
       - "3004:3004"
     depends_on: 
-      - redis
-      - rabbitmq
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     environment:
       - REDIS_URL = redis://redis:6379
       - RABBITMQ_URL = amqp://rabbitmq:5672
@@ -79,6 +85,6 @@ services:
       - "15672:15672"
     healthcheck:
       test: ['CMD', "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 30s
-      timeout: 10s
+      interval: 10s
+      timeout: 5s
       retries: 5
