@@ -123,8 +123,9 @@ spec:
       containers:
       - name: media-service
         image: social_media_microservice-media-service:latest
+        imagePullPolicy: Never  # ADD THIS
         ports:
-        - containerPort: 3002
+        - containerPort: 3003
         envFrom:
         - secretRef:
             name: microservices-env
@@ -148,9 +149,9 @@ spec:
   selector:
     app: media-service
   ports:
-  - port: 3002
-    targetPort: 3002
-    nodePort: 30002
+  - port: 3003
+    targetPort: 3003
+    nodePort: 30003
 
 
 ---
@@ -176,7 +177,7 @@ spec:
         image: social_media_microservice-post-service:latest
         imagePullPolicy: Never  # ADD THIS
         ports:
-        - containerPort: 3003
+        - containerPort: 3002
         envFrom:
         - secretRef:
             name: microservices-env
@@ -200,9 +201,9 @@ spec:
   selector:
     app: post-service
   ports:
-  - port: 3003
-    targetPort: 3003
-    nodePort: 30003
+  - port: 3002
+    targetPort: 3002
+    nodePort: 30002
 
 
 ---
