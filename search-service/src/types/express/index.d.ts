@@ -5,14 +5,13 @@ export {};
 declare global {
   namespace Express {
     export interface Request {
-      user: {
+      user?: {
         userId: string;
       };
       RedisRequest: {
         RedisClient?: Redis;
         user?: object;
       },
-
     }
   }
 }

@@ -14,7 +14,7 @@ import { handlePostCreated, handlePostDeleted } from "./events-handlers/event.ha
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3004;
+const PORT : string = process.env.PORT || "3004";
 
 mongoose
   .connect(process.env.MONGODB_URI as string)
