@@ -68,6 +68,7 @@ interface AuthenticatedRequest extends Request {
     };
 }
 // setting up proxy for out identity service
+// setting up proxy for out identity service
 app.use("/v1/auth", proxy(process.env.IDENTITY_SERVICE_URL as string, {
     ...proxyOptions,
     proxyReqOptDecorator: (proxyReqOpts: RequestOptions, srcReq: Request) => { // Function to customize HTTP options for proxied requests

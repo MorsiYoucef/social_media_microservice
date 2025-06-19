@@ -2,10 +2,10 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IMedia extends Document {
     publicId: string;
-    originalName: String;
+    originalName: string;
     userId: mongoose.Schema.Types.ObjectId;
     mimeType?: string;
-    url: String;
+    url: string;
 }
 
 const mediaSchema: Schema = new mongoose.Schema(

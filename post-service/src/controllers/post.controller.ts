@@ -96,6 +96,7 @@ export const getAllPosts = async (req: Request, res: Response) => {
     if (cachedPosts) {
       logger.info("Post retrieved from cache", { cacheKey });
       res.json(JSON.parse(cachedPosts));
+      return;
     }
     const posts = await Post.find({})
       .sort({ createdAt: -1 })
