@@ -225,6 +225,54 @@ class AuthController {
         .json({ success: false, message: "Internal Server Error" });
     }
   };
+
+  public static getAllUsers = async (req: Request, res: Response) => {
+    try {
+      // Pagination params
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const skip = (page - 1) * limit;
+
+      const cacheKey = `users:page:${page}:limit:${limit}`;
+      const cachedUsers = await req?.RedisClient?.get(cacheKey);
+
+      console.log("cache data:", req);
+
+
+      if (cachedUsers) {
+        logger.info("Users retrieved from cache", { cacheKey });
+        res.json({
+          success: true,
+          source: "cache",
+          ...JSON.parse(cachedUsers),
+        });
+        return;
+      }
+
+      
+      // Fetch from DB
+      const users = await User.find({}, { username: 1, email: 1 }).skip(skip).limit(limit);
+      const totalUsers = await User.countDocuments();
+      const totalPages = Math.ceil(totalUsers / limit);
+      const result = {
+        users,
+        page,
+        totalPages,
+        totalUsers,
+      };
+      // Cache the result
+      await req?.RedisClient?.setex(
+        cacheKey,
+        300,
+        JSON.stringify(result)
+      );
+      logger.info('Users fetched from DB and cached');
+      res.json({ success: true, source: 'db', ...result });
+    } catch (error) {
+      logger.error('Error fetching users', error);
+      res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
+  }
 }
 
 export default AuthController;

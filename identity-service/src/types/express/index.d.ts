@@ -1,12 +1,15 @@
+import Redis from "ioredis";
+
 export {};
 
 declare global {
   namespace Express {
     export interface IUser {
-      userId: string
+      userId: string;
     }
     export interface Request {
-      user?: IUser
+      user?: IUser;
+      RedisClient: Redis;
     }
   }
 }
