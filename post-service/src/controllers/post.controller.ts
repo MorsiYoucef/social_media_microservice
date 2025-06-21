@@ -20,14 +20,14 @@ import { publishEvent } from "../utils/rabbitMQ";
 
 async function invalidatePostCashe(req: Request, input: any) {
   const cashedKey = `posts:${input}`;
-  await req?.RedisRequest?.RedisClient?.del(cashedKey);
+  await req?.RedisClient?.del(cashedKey);
 
-  const keys = await req?.RedisRequest?.RedisClient?.keys("posts:*");
+  const keys = await req?.RedisClient?.keys("posts:*");
   if (!keys) {
     return logger.error("Keys is underfined");
   }
   if (keys.length > 0) {
-    await req?.RedisRequest?.RedisClient?.del(keys);
+    await req?.RedisClient?.del(keys);
   }
 }
 
@@ -91,7 +91,8 @@ export const getAllPosts = async (req: Request, res: Response) => {
     const startIndex = (page - 1) * limit;
 
     const cacheKey = `posts:${page}:${limit}`;
-    const cachedPosts = await req?.RedisRequest?.RedisClient?.get(cacheKey);
+    const cachedPosts = await req?.RedisClient?.get(cacheKey);
+    console.log("Cache posts:", cachedPosts);
 
     if (cachedPosts) {
       logger.info("Post retrieved from cache", { cacheKey });
@@ -110,7 +111,7 @@ export const getAllPosts = async (req: Request, res: Response) => {
       totalPages: Math.ceil(totalNumPosts / limit),
       totalPosts: totalNumPosts,
     };
-    await req?.RedisRequest?.RedisClient?.setex(
+    await req?.RedisClient?.setex(
       cacheKey,
       300,
       JSON.stringify(result)
@@ -130,7 +131,7 @@ export const getPost = async (req: Request, res: Response) => {
   try {
     const postId = req.params.id;
     const cashedKey = `post:${postId}`;
-    const cachedPost = await req?.RedisRequest?.RedisClient?.get(cashedKey);
+    const cachedPost = await req?.RedisClient?.get(cashedKey);
     if (cachedPost) {
       logger.info("Post retrieved from cache", { cashedKey });
       res.json(JSON.parse(cachedPost));
@@ -142,7 +143,7 @@ export const getPost = async (req: Request, res: Response) => {
         message: "Post not found",
       });
     }
-    await req?.RedisRequest?.RedisClient?.setex(
+    await req?.RedisClient?.setex(
       cashedKey,
       3600,
       JSON.stringify(postDetailsById)

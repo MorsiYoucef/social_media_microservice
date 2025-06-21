@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import Redis from "ioredis";
 // to make the file a module and avoid the TypeScript error
 export {};
 
@@ -8,11 +8,8 @@ declare global {
       user: {
         userId?: string;
       };
-      RedisRequest: {
-        RedisClient?: Redis;
-        user?: object;
-      },
-
+      RedisClient?: Redis;
+      user?: object;
     }
   }
 }
