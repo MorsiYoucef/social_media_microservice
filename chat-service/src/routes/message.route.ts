@@ -3,8 +3,8 @@ import { authenticateRequest } from '../middlewares/auth.middleware';
 import MessageController from '../controllers/message.controller';
 const router = express.Router();
 
-
-router.get("/users", authenticateRequest, MessageController.getUsersForSidebar)
+router.use(authenticateRequest);
+router.get("/users", MessageController.getUsersForSidebar)
 
 
 export default router

@@ -1,5 +1,5 @@
 import { RateLimiterRedis } from "rate-limiter-flexible";
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import mongoose from "mongoose";
@@ -7,15 +7,19 @@ import Redis from "ioredis";
 import helmet from "helmet";
 import { errorHandler } from "./middlewares/errorHandler";
 import logger from "./utils/logger";
+import messageRoutes from "./routes/message.route";
 import { rateLimit } from "express-rate-limit";
 import { RedisStore } from "rate-limit-redis";
 import { connectToRabbitMQ } from "./utils/rabbitMQ";
+import { app, server } from "./utils/socket";
+import path from "path";
 
 dotenv.config();
 
 //Initialize Express
-const app = express();
-const PORT = process.env.PORT || 3005;
+const PORT = process.env.PORT || 3005
+const __dirname = path.resolve();
+
 
 mongoose
   .connect(process.env.MONGODB_URI as string)
@@ -44,10 +48,20 @@ const rateLimiter = new RateLimiterRedis({
 });
 
 
+app.use(
+  "/api/messages",
+  (req: Request, res: Response, next: NextFunction) => {
+    req.RedisClient = redisClient;
+    next();
+  },
+  messageRoutes
+);
+
+
 async function startServer() {
   try {
     await connectToRabbitMQ();
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       logger.info(` Chat service is running on port ${PORT}`);
     });
   } catch (error) {
