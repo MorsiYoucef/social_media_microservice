@@ -5,6 +5,8 @@ const router = express.Router();
 
 router.use(authenticateRequest);
 router.get("/users", MessageController.getUsersForSidebar)
+router.get("/:id", MessageController.getMessages)
+router.post("/:id", MessageController.sendMessage)
 
 
 export default router

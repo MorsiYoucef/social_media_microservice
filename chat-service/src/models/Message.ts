@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IMessage extends Document {
   senderId: mongoose.Types.ObjectId;
   receiverId: mongoose.Types.ObjectId;
-  text: string;
+  text?: string;
   media?: {
     url: string;
     public_id: string;
@@ -27,7 +27,6 @@ const MessageSchema = new mongoose.Schema<IMessage>(
     },
     text: {
       type: String,
-      required: true,
     },
     media: {
       url: String,

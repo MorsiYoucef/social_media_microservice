@@ -1,6 +1,6 @@
 import { Server, Socket } from "socket.io";
 import http from "http";
-import express from "express";
+import express, { Request } from "express";
 
 const app = express();
 const server = http.createServer(app);
@@ -24,6 +24,7 @@ export const getReceiverSocketId = (userId: string): string | undefined => {
 io.on("connection", (socket: Socket) => {
   console.log("A user connected:", socket.id);
   const userId = socket.handshake.query.userId as string;
+  console.log("User ID from handshake:", userId);
   if (userId) {
     userSocketMap[userId] = socket.id;
     console.log(`User ${userId} connected with socket ID: ${socket.id}`);
