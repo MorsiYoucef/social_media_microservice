@@ -73,6 +73,21 @@ services:
     environment:
       - REDIS_URL = redis://redis:6379
       - RABBITMQ_URL = amqp://rabbitmq:5672
+  chat-service:
+    build:
+      context: ./chat-service
+      dockerfile: Dockerfile
+    env_file: ./chat-service/.env
+    ports:
+      - "3005:3005"
+    depends_on: 
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - REDIS_URL = redis://redis:6379
+      - RABBITMQ_URL = amqp://rabbitmq:5672
   redis:
     image: redis:alpine
     ports:
