@@ -1,14 +1,14 @@
 import express from 'express';
-import { createPost, deletePost, getAllPosts, getPost } from '../controllers/post.controller';
+import PostController from '../controllers/post.controller';
 import { authenticateRequest } from '../middlewares/auth.middleware';
 
 const router = express.Router();
 
 
 router.use(authenticateRequest);
-router.post('/create-posts',createPost);
-router.get('/all-posts', getAllPosts);
-router.get('/:id', getPost); // Assuming getPostById is implemented elsewhere
-router.delete('/:id', deletePost);
+router.post("/create-posts", PostController.createPost);
+router.get("/all-posts", PostController.getAllPosts);
+router.get("/:id", PostController.getPost); // Assuming getPostById is implemented elsewhere
+router.delete("/:id", PostController.deletePost);
 
 export default router;
